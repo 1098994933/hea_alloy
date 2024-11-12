@@ -51,3 +51,4 @@ if __name__ == '__main__':
         df_magpie = get_magpie_features("formula.csv", data_path="./data/")
         print(df_magpie.columns)
         df_magpie.to_csv(f"./data/2_{dataset_name}_magpie_feature.csv", index=False)
+

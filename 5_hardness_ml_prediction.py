@@ -115,7 +115,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
 
-    # 预测硬度
+    # 预测硬度 (已计算好matminer特征, 计算过程在2_feature_calculation）
     dataset_predict = pd.read_csv(os.path.join(data_path, "2_oxidation_magpie_feature.csv"))
     y_predict = model_final.predict(dataset_predict[features])
     dataset_predict["hardness_predict"] = y_predict
