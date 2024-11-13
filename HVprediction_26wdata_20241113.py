@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # plt.show()
     # plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
 
-    predata = pd.read_csv(os.path.join(data_path, "HVprediction_26w.csv"))
+    predata = pd.read_csv(os.path.join(data_path, "hardness_prediction_26w_test.csv"))
     # print(predata.head())
     formula = get_chemical_formula(predata)
     pre_chemistry_formula = pd.DataFrame({"formula": formula})
