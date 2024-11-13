@@ -43,7 +43,7 @@ def RBF_SVR(C=1.0, gamma=1.0, epsilon=1.0):
 
 
 if __name__ == '__main__':
-    data_path = "/kaggle/working/hea_alloy/data/"
+    data_path = "./data/"
     dataset = pd.read_csv(os.path.join(data_path, "370composition.csv"))
     Y_col = "HV"
     feature_file_path = os.path.join(data_path, "magpie_feature_hardness.csv")
@@ -101,8 +101,8 @@ if __name__ == '__main__':
     # print(predata.head())
     formula = get_chemical_formula(predata)
     pre_chemistry_formula = pd.DataFrame({"formula": formula})
-    pre_chemistry_formula.to_csv("/kaggle/working/hea_alloy/data/formula_HVprediction_26w.csv", index=False)
-    predata_magpie = get_magpie_features("formula_HVprediction_26w.csv", data_path="/kaggle/working/hea_alloy/data/")
+    pre_chemistry_formula.to_csv("./data/formula_HVprediction_26w.csv", index=False)
+    predata_magpie = get_magpie_features("formula_HVprediction_26w.csv", data_path="./data/")
     feature_file_path_pre = os.path.join(data_path, "magpie_formula_HVprediction_26w.csv")
     predata_magpie.to_csv(feature_file_path_pre, index=False)
     predata_magpie = pd.read_csv(feature_file_path_pre)
