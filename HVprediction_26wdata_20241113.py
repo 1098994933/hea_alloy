@@ -21,6 +21,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 import re
 import pickle
 
+
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_rows', 50)
 pd.set_option('display.max_columns', 50)
