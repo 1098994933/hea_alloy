@@ -26,7 +26,7 @@ def set_group_for_oxidation():
     df_all.to_csv("./data/formula_group.csv", index=False)
     print("set_group_for_oxidation done")
 
-def caculate_oxidation_slope():
+def calculate_oxidation_slope():
     """
     calculate oxidation slope for each group
     """
@@ -36,7 +36,7 @@ def caculate_oxidation_slope():
     df["formula"] = formulas
     # print(df)
     # df.to_csv("./data/1_oxidation_ml_dataset_modified.csv", index=False)
-    grouped = df.groupby(by=["formula", "Temperature"])
+    grouped = df.groupby(by=["formula", "Temperature"])  # 根据多个元素分组
     formula_slope = []
     tem = []
     for i in range(len(list(grouped.groups.keys()))):
@@ -46,12 +46,12 @@ def caculate_oxidation_slope():
     print(len(formula_slope), len(tem))
     slope = []
     for i in range(len(list(grouped.groups.keys()))):
-        group_a = grouped.get_group((formula_slope[i], tem[i]))
-        model = LinearRegression()
-        Y = group_a["weight"].to_frame()
+        group_a = grouped.get_group((formula_slope[i], tem[i]))  # 对多元素分组获取每一组时需要传入元组
+        model = LinearRegression()  # 用线性回归拟合并计算斜率
+        Y = group_a["weight"].to_frame()  # 提取单列需要额外转成dataframe
         X = group_a["Exposure"].to_frame()
         model.fit(X, Y)
-        slope.append(float(model.coef_[0][0]))
+        slope.append(float(model.coef_[0][0]))  # 获得斜率信息
     print(formula_slope, tem)
     print(f"slopes: {slope}")
     df_slope = pd.DataFrame({"formula": formula_slope, "slope": slope, "temperature": tem})
@@ -60,4 +60,4 @@ def caculate_oxidation_slope():
 
 if __name__ == '__main__':
     # set_group_for_oxidation()
-    caculate_oxidation_slope()
+    calculate_oxidation_slope()
