@@ -31,27 +31,31 @@ def caculate_oxidation_slope():
     calculate oxidation slope for each group
     """
     df = pd.read_csv("./data/1_oxidation_ml_dataset_modified.csv")
-    ele_col = list(df.columns[:-3])  # 元素列表
+    ele_col = list(df.columns[:-4])  # 元素列表
     formulas = get_chemical_formula(df[ele_col])
     df["formula"] = formulas
     # print(df)
     # df.to_csv("./data/1_oxidation_ml_dataset_modified.csv", index=False)
-    grouped = df.groupby(by=["formula"])
-    formula = list(set(formulas))
-    slope = []
+    grouped = df.groupby(by=["formula", "Temperature"])
+    formula_slope = []
     tem = []
-    for i in formula:
-        group_a = grouped.get_group(i)
+    for i in range(len(list(grouped.groups.keys()))):
+        formula_slope.append(list(grouped.groups.keys())[i][0])
+        tem.append(list(grouped.groups.keys())[i][1])
+    print(formula_slope, tem)
+    print(len(formula_slope), len(tem))
+    slope = []
+    for i in range(len(list(grouped.groups.keys()))):
+        group_a = grouped.get_group((formula_slope[i], tem[i]))
         model = LinearRegression()
         Y = group_a["weight"].to_frame()
         X = group_a["Exposure"].to_frame()
         model.fit(X, Y)
         slope.append(float(model.coef_[0][0]))
-        tem.append(group_a["Temperature"].iloc[0])
-    print(formula, tem)
+    print(formula_slope, tem)
     print(f"slopes: {slope}")
-    df_slope = pd.DataFrame({"formula": formula, "slope": slope, "temperature": tem})
-    # df_slope.to_csv("./data/oxidation_slope.csv", index=False)
+    df_slope = pd.DataFrame({"formula": formula_slope, "slope": slope, "temperature": tem})
+    df_slope.to_csv("./data/oxidation_slope.csv", index=False)
 
 
 if __name__ == '__main__':
