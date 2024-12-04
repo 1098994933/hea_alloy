@@ -1,0 +1,124 @@
+from sklearn.feature_selection import SelectKBest, RFE
+from sklearn.feature_selection import f_regression, mutual_info_regression
+from sklearn.metrics import mean_squared_error
+from sklearn.inspection import permutation_importance
+from sklearn.preprocessing import StandardScaler
+import os
+import scipy
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import GradientBoostingRegressor, AdaBoostRegressor
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import Ridge, Lasso, ElasticNet, LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import SVR
+from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+import numpy as np
+import pickle
+from scipy import stats
+
+from util.descriptor.UTS_magpie import Linear_SVR, RBF_SVR
+
+
+# slope数据量太少了 效果很差
+if __name__ == '__main__':
+    dataset_slope_original = pd.read_csv("./data/2_oxidation_slope_magpie_feature.csv")
+    Y_col = 'slope'
+    feature_names = list(dataset_slope_original.columns[2:])
+    # print(dataset_slope_original[Y_col].std())  # 计算标准差
+    # with plt.style.context([]):  # 传递一个空列表 [] 表示不应用任何预定义的样式表，恢复到默认样式。可以传入字典来规定绘图的参数/样式
+    #     fig, ax = plt.subplots(dpi=200, figsize=(5, 5))
+    #     plt.hist(dataset_slope_original[Y_col], bins=10)
+        # plt.show()
+    X = dataset_slope_original[feature_names]
+    # print(type(X))
+    scaler = MinMaxScaler()
+    X = scaler.fit_transform(X)
+    X = pd.DataFrame(X)
+    Y = dataset_slope_original[Y_col]
+    # print(type(X))
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
+                                                        test_size=0.2,
+                                                        random_state=1)
+    k_best = len(feature_names)
+    feature_selector = SelectKBest(f_regression, k=k_best).fit(X_train, Y_train)
+    feature_scores = feature_selector.scores_
+    # print('feature_scores:', feature_scores)  # 得分越高，特征越重要
+    indices = np.argsort(feature_scores)[::-1]
+    val_config = {}
+    val_config['feature_num'] = k_best
+    best_features = list(X_train.columns.values[indices[0:val_config['feature_num']]])
+    # print("best_features", best_features)
+    # execute feature selection
+    X_train = feature_selector.transform(X_train)
+    X_test = feature_selector.transform(X_test)
+    alg_dict = {
+        "Lasso": Lasso(),
+        "Ridge": Ridge(),
+        "LinearRegression": LinearRegression(),
+        # 'LinearSVR': Linear_SVR(C=1),
+        # 'LinearSVR2': Linear_SVR(C=100),
+        # 'LinearSVR3': Linear_SVR(C=10),
+        "GradientBoosting": GradientBoostingRegressor(),
+        "AdaBoost": AdaBoostRegressor(),
+        "ExtraTrees": ExtraTreesRegressor(),
+        "RandomForest": RandomForestRegressor(n_estimators=100, min_samples_split=2, random_state=4, n_jobs=4),
+        "KNeighbors": KNeighborsRegressor(),
+        "DecisionTree": DecisionTreeRegressor(),
+        "SVR_rbf": SVR(C=1000, gamma=0.05, kernel='rbf'),
+        "SVR_linear": SVR(C=1000, gamma=0.05, kernel='linear'),
+        # 'RbfSVR': RBF_SVR(C=1),
+        # 'RbfSVR1': RBF_SVR(C=10, gamma=0.20),
+        # 'RbfSVR2': RBF_SVR(C=100, gamma=0.10),
+        # 'RbfSVR3': RBF_SVR(C=1000, gamma=0.05),
+        # 'RbfSVR4': RBF_SVR(C=0.1, gamma=0.01),
+    }
+    best_model = None
+    best_score = -10**10
+    y_predict = None
+    for alg_name in alg_dict.keys():
+        model = alg_dict[alg_name]
+        model.fit(X_train, Y_train)
+        y_predict = model.predict(X_test)
+        r2 = r2_score(Y_test, y_predict)
+        mse = mean_squared_error(Y_test, y_predict)
+        print(f"test_mse: {mse}\t test_r2: {r2}\t model:{model}")
+        score = cross_val_score(model, X, Y, cv=10, scoring='r2')
+        # print(score)
+        avg_score = np.mean(score)
+        # print(avg_score)
+        if avg_score > best_score:
+            best_score = avg_score
+            best_model = model
+    # save the best model
+    print(f"best score {best_score} best model {best_model}")
+    all_predict = best_model.predict(X)
+    with plt.style.context([]):
+        x = Y_col
+        r2 = r2_score(dataset_slope_original[x], all_predict)
+        fig, ax = plt.subplots(dpi=200, figsize=(5, 5))
+        plt.scatter(dataset_slope_original[x], all_predict, c='blue', alpha=0.6)
+        plt.xlabel("True")
+        plt.ylabel("predict")
+        #
+        lim_max = max(max(dataset_slope_original[x]), max(all_predict))
+        lim_min = min(min(dataset_slope_original[x]), min(all_predict))
+        scale_min = lim_min - (lim_max - lim_min) * 0.1
+        scale_max = lim_max + (lim_max - lim_min) * 0.1
+        plt.plot([scale_min, scale_max], [scale_min, scale_max], color='black', linestyle="--")
+        # plt.xticks(fontsize=12, fontweight='bold')
+        # plt.yticks(fontsize=12, fontweight='bold')
+        # plt.xlabel(x, fontsize=12, fontweight='bold')
+        # plt.ylabel(y, fontsize=12, fontweight='bold')
+        # plt.xlim(scale_min, scale_max)
+        # plt.ylim(scale_min, scale_max)
+        plt.text(0.05, 0.95, "$R^2={r2}$".format(r2=round(r2, 2)), transform=ax.transAxes)
+        # plt.savefig(f'./figures/R2_lower5.png', bbox_inches='tight')
+        plt.show()
