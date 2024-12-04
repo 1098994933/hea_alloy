@@ -2,6 +2,9 @@
 hardness of HEA modeling and prediction
 """
 import os
+
+from scipy.stats import pearsonr
+
 from util.base_function import get_chemical_formula
 from util.descriptor.magpie import get_magpie_features
 from util.eval import cal_reg_metric
@@ -23,6 +26,9 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 import re
 import pickle
+from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
+from sklearn.metrics import r2_score
+
 
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_rows', 50)
@@ -49,15 +55,15 @@ if __name__ == '__main__':
     data_path = "./data/"
     dataset = pd.read_csv(os.path.join(data_path, "370composition.csv"))
     print("rows", dataset.shape[0])
-    print("col", list(dataset.columns))
+    # print("col", list(dataset.columns))
     Y_col = 'HV'
     elements_columns = list(dataset.columns[3:])
-    print(elements_columns)
+    # print(elements_columns)
     dataset.head()
-    chemical_formula_list = get_chemical_formula(dataset[elements_columns])
-    df_chemistry_formula = pd.DataFrame({"formula": chemical_formula_list, "target": dataset[Y_col]})
-    print(df_chemistry_formula.head())
-    df_chemistry_formula.to_csv("./data/formula_hardness.csv", index=False)
+    chemical_formula_list = dataset['formula']
+    # df_chemistry_formula = pd.DataFrame({"formula": chemical_formula_list, "target": dataset[Y_col]})
+    # print(df_chemistry_formula.head())
+    # df_chemistry_formula.to_csv("./data/formula_hardness.csv", index=False)
     # if 特征已经计算过，不需重复计算
     feature_file_path = os.path.join(data_path, "magpie_feature_hardness.csv")
     if os.path.exists("./data/magpie_feature_hardness.csv"):
@@ -66,24 +72,33 @@ if __name__ == '__main__':
         df_magpie = get_magpie_features("formula_hardness.csv", data_path="./data/")
         df_magpie.to_csv(feature_file_path, index=False)
         print(f"save features to {feature_file_path}")
-    print(df_magpie)
+    # print(df_magpie)
     dataset_all = pd.concat([dataset, df_magpie], axis=1)
     # features = elements_columns + conditions_features + magpie_features
+
+    # 这边少加了个熔点特征
     valence_features = ['avg s valence electrons', 'avg p valence electrons', 'avg d valence electrons',
                         'avg f valence electrons']
+    alloy_feature = ['Melting temperature']
     features = ['MagpieData avg_dev AtomicWeight', 'MagpieData avg_dev Column',
                 'MagpieData avg_dev GSvolume_pa'] + valence_features
+    alloy_features = pd.read_csv("./data/2_Hardness_alloy_feature.csv")
+    Tm = alloy_features[alloy_feature]
+
     print("len(features)", len(features))
     # ML 建模和评估
     ml_dataset = dataset_all[features + [Y_col]].dropna()
-    ml_dataset.head()
+    ml_dataset = pd.concat([ml_dataset, Tm], axis=1)
+    # print(ml_dataset.head(), ml_dataset.shape)
+    features = features + alloy_feature
+
     from sklearn.model_selection import train_test_split
 
     X = ml_dataset[features]
     Y = ml_dataset[Y_col]
     from sklearn.preprocessing import StandardScaler
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=1)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=6)
     model_final = RBF_SVR(C=1642, epsilon=13.6, gamma=0.44)
     model_final.fit(X_train, Y_train)
     y_predict = model_final.predict(X_test)
@@ -91,11 +106,15 @@ if __name__ == '__main__':
     y_train_predict = model_final.predict(X_train)
     y_true = Y_test
     evaluation_matrix = cal_reg_metric(y_true, y_predict)
+    cvscore = cross_val_score(model_final, X, Y, cv=10)
+    y_cv_predict = cross_val_predict(model_final, X, Y, cv=10)
+    R, _ = pearsonr(Y, y_cv_predict)
+    print(np.mean(cvscore), R.round(3))
 
     lim_max = max(max(y_predict), max(y_true), max(Y_train), max(y_train_predict)) * 1.02
     lim_min = min(min(y_predict), min(y_true), min(Y_train), min(y_train_predict)) * 0.98
 
-    plt.figure(figsize=(7, 5), dpi=400)
+    plt.figure(figsize=(7, 5))  # 别设dpi
     plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
     plt.rcParams['axes.unicode_minus'] = False  # 显示负号
     plt.grid(linestyle="--")  # 设置背景网格线为虚线
@@ -111,12 +130,16 @@ if __name__ == '__main__':
     plt.ylim(lim_min, lim_max)
     r2 = evaluation_matrix["R2"]
     mae = evaluation_matrix["MAE"]
-    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n", transform=ax.transAxes)
+    R = evaluation_matrix["R"]
+    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
     plt.legend()
-    plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
+    # plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
+    plt.show()
 
     # 预测硬度 (已计算好matminer特征, 计算过程在2_feature_calculation）
     dataset_predict = pd.read_csv(os.path.join(data_path, "2_oxidation_magpie_feature.csv"))
+    oxidation_alloy_features = pd.read_csv("./data/2_oxidation_alloy_feature.csv")
+    dataset_predict = pd.concat([dataset_predict, oxidation_alloy_features['Melting temperature']], axis=1)
     y_predict = model_final.predict(dataset_predict[features])
     dataset_predict["hardness_predict"] = y_predict
     dataset_predict.to_csv("./data/2_oxidation_hardness_predict.csv", index=False)
