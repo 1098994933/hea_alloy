@@ -64,6 +64,7 @@ if __name__ == '__main__':
     dataset = dataset[dataset['CFS'] >= (Q1 - (1.5 * IQR))]
     # print(dataset.iloc[228])
     Y_col = 'CFS'
+    # TODO no hard code here! you can load from a config file or a json/pickle file. if it is from another feature selection .py code. save the feature name list in a file. Then others can know how to generate it.
     best_features_myy = ['MagpieData range MendeleevNumber', 'MagpieData avg_dev MendeleevNumber',
                 'MagpieData avg_dev MeltingT', 'MagpieData mean NValence',
                  'MagpieData mean NsUnfilled', 'MagpieData maximum NUnfilled',

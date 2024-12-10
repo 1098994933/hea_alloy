@@ -18,5 +18,5 @@ if __name__ == '__main__':
             if 0 not in element_ratio:
                 print(element_ratio)
                 all_element_ratios.append(element_ratio)
-    result = pd.DataFrame(all_element_ratios, columns=search_range.keys())
+    result = pd.DataFrame(all_element_ratios, columns=list(search_range.keys()))
     result.to_csv("./data/HEA_virtual_samples_simple.csv")

@@ -26,6 +26,7 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 import re
 import pickle
+# TODO if new dependent package is add.  pls add it in requirements.txt with version, here lightgbm is not in the requirement.txt
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
 from sklearn.metrics import r2_score, mean_squared_error

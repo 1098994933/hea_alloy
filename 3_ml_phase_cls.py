@@ -146,3 +146,9 @@ if __name__ == '__main__':
     # print(y_predict)
     # dataset_predict.insert(0, "phase_predict", y_predict)
     # dataset_predict.to_csv("./data/3_oxidation_phase_predict.csv", index=False)
+
+    # PCA projection
+    from util.projection.PCA import PCAProjection
+    pca_projection = PCAProjection()
+    pca_projection.fit(X)
+    pca_projection.visualize(X, Y, save=False, filename='./data/pca_visualization_phase.png')
