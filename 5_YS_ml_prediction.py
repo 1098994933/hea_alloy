@@ -1,18 +1,10 @@
 """
 Yield strength of HEA modeling and prediction
 """
-import os
-
-from scipy.stats import pearsonr
-
-from util.base_function import get_chemical_formula
-from util.descriptor.magpie import get_magpie_features
 from util.eval import cal_reg_metric
-import json
+
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import warnings
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PolynomialFeatures
@@ -26,10 +18,12 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 import re
 import pickle
-# TODO if new dependent package is add.  pls add it in requirements.txt with version, here lightgbm is not in the requirement.txt
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
 from sklearn.metrics import r2_score, mean_squared_error
+
+from util.plot import plot_regression_results
+
 
 def lgbm_model(boosting_type='gbdt', objective='regression', learning_rate=0.15):
     return Pipeline([
@@ -81,33 +75,15 @@ if __name__ == '__main__':
     RMSE = np.sqrt(mean_squared_error(Y_test, y_test_predict))
     print(RMSE, R2)
     print(evaluation_matrix_train)
+    evaluation_matrix_cv = cal_reg_metric(Y_train, y_cv_predict)
 
     model_path = "./model/YS_model.pkl"
     with open(model_path, 'wb') as file:
         pickle.dump(model_final, file)
     print(f"Model saved to {model_path}")
-
-    lim_max = max(max(y_test_predict), max(Y_test), max(Y_train), max(y_train_predict)) * 1.02
-    lim_min = min(min(y_test_predict), min(Y_test), min(Y_train), min(y_train_predict)) * 0.98
-
-    plt.figure(figsize=(7, 5))
-    plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
-    plt.rcParams['axes.unicode_minus'] = False  # 显示负号
-    plt.grid(linestyle="--")  # 设置背景网格线为虚线
-    ax = plt.gca()  # 获取坐标轴对象
-    plt.scatter(Y_test, y_test_predict, color='red', alpha=0.4, label='test')
-    plt.scatter(Y_train, y_train_predict, color='blue', alpha=0.4, label='train')
-    plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
-    plt.xticks(fontsize=12, fontweight='bold')
-    plt.yticks(fontsize=12, fontweight='bold')
-    plt.xlabel("Measured(YS)", fontsize=12, fontweight='bold')
-    plt.ylabel("Predicted(YS)", fontsize=12, fontweight='bold')
-    plt.xlim(lim_min, lim_max)
-    plt.ylim(lim_min, lim_max)
-    r2 = evaluation_matrix["R2"]
-    mae = evaluation_matrix["MAE"]
-    R = evaluation_matrix["R"]
-    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
-    plt.legend()
-    plt.savefig(f'./figures/HEA_YS_reg.png', bbox_inches='tight')
-    plt.show()
+    # plot test set
+    # cv
+    plot_regression_results(Y_train, y_cv_predict, evaluation_matrix=evaluation_matrix_cv)
+    save_path = f'./figures/HEA_YS_reg.png'
+    plot_regression_results(Y_test, y_test_predict, Y_train, y_train_predict, evaluation_matrix=evaluation_matrix
+                            , save_path=save_path)

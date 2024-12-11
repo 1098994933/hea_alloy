@@ -108,30 +108,6 @@ if __name__ == '__main__':
         pickle.dump(model_final, file)
     print(f"Model saved to {model_path}")
 
-    lim_max = max(max(y_test_predict), max(Y_test), max(Y_train), max(y_train_predict)) * 1.02
-    lim_min = min(min(y_test_predict), min(Y_test), min(Y_train), min(y_train_predict)) * 0.98
-
-    plt.figure(figsize=(7, 5))
-    plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
-    plt.rcParams['axes.unicode_minus'] = False  # 显示负号
-    plt.grid(linestyle="--")  # 设置背景网格线为虚线
-    ax = plt.gca()  # 获取坐标轴对象
-    plt.scatter(Y_test, y_test_predict, color='red', alpha=0.4, label='test')
-    plt.scatter(Y_train, y_train_predict, color='blue', alpha=0.4, label='train')
-    plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
-    plt.xticks(fontsize=12, fontweight='bold')
-    plt.yticks(fontsize=12, fontweight='bold')
-    plt.xlabel("Measured(CFS)", fontsize=12, fontweight='bold')
-    plt.ylabel("Predicted(CFS)", fontsize=12, fontweight='bold')
-    plt.xlim(lim_min, lim_max)
-    plt.ylim(lim_min, lim_max)
-    r2 = evaluation_matrix["R2"]
-    mae = evaluation_matrix["MAE"]
-    R = evaluation_matrix["R"]
-    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
-    plt.savefig(f'./figures/HEA_CFS_reg.png', bbox_inches='tight')
-    # 为每个点标上序号
-    for i, (x, y) in enumerate(zip(Y, y_predict)):
-        plt.text(x, y, f'{i}', fontsize=8, ha='right', va='bottom', color='black')
-    plt.legend()
-    plt.show()
+    # plot regression
+    from util.plot import plot_regression_results
+    plot_regression_results(Y_test, y_test_predict, Y_train, y_train_predict, plot_test_index=True, evaluation_matrix=evaluation_matrix)

@@ -25,7 +25,7 @@ import pickle
 from scipy import stats
 
 from util.descriptor.UTS_magpie import Linear_SVR, RBF_SVR
-
+from util.plot import plot_regression_results
 
 # slope数据量太少了 效果很差
 if __name__ == '__main__':
@@ -100,25 +100,6 @@ if __name__ == '__main__':
     # save the best model
     print(f"best score {best_score} best model {best_model}")
     all_predict = best_model.predict(X)
-    with plt.style.context([]):
-        x = Y_col
-        r2 = r2_score(dataset_slope_original[x], all_predict)
-        fig, ax = plt.subplots(dpi=200, figsize=(5, 5))
-        plt.scatter(dataset_slope_original[x], all_predict, c='blue', alpha=0.6)
-        plt.xlabel("True")
-        plt.ylabel("predict")
-        #
-        lim_max = max(max(dataset_slope_original[x]), max(all_predict))
-        lim_min = min(min(dataset_slope_original[x]), min(all_predict))
-        scale_min = lim_min - (lim_max - lim_min) * 0.1
-        scale_max = lim_max + (lim_max - lim_min) * 0.1
-        plt.plot([scale_min, scale_max], [scale_min, scale_max], color='black', linestyle="--")
-        # plt.xticks(fontsize=12, fontweight='bold')
-        # plt.yticks(fontsize=12, fontweight='bold')
-        # plt.xlabel(x, fontsize=12, fontweight='bold')
-        # plt.ylabel(y, fontsize=12, fontweight='bold')
-        # plt.xlim(scale_min, scale_max)
-        # plt.ylim(scale_min, scale_max)
-        plt.text(0.05, 0.95, "$R^2={r2}$".format(r2=round(r2, 2)), transform=ax.transAxes)
-        # plt.savefig(f'./figures/R2_lower5.png', bbox_inches='tight')
-        plt.show()
+    x = Y_col
+    r2 = r2_score(dataset_slope_original[x], all_predict)
+    plot_regression_results(dataset_slope_original[x], all_predict)

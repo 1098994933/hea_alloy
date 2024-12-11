@@ -30,6 +30,7 @@ def calculate_oxidation_slope():
     """
     calculate oxidation slope for each group
     """
+    # TODO @zyj pls add the source data file in git
     df = pd.read_csv("./data/1_oxidation_ml_dataset_modified.csv")
     ele_col = list(df.columns[:-4])  # 元素列表
     formulas = get_chemical_formula(df[ele_col])

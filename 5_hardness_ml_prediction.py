@@ -8,6 +8,7 @@ from scipy.stats import pearsonr
 from util.base_function import get_chemical_formula
 from util.descriptor.magpie import get_magpie_features
 from util.eval import cal_reg_metric
+from util.plot import plot_regression_results
 import json
 import pandas as pd
 import numpy as np
@@ -108,33 +109,15 @@ if __name__ == '__main__':
     y_cv_predict = cross_val_predict(model_final, X_train, Y_train, cv=10)
     R, _ = pearsonr(Y_train, y_cv_predict)
     print(cvscore, np.mean(cvscore), R.round(3))
+    evaluation_matrix_cv = cal_reg_metric(Y_train, y_cv_predict)
 
     model_path = "./model/hardness_model.pkl"
     with open(model_path, 'wb') as file:
         pickle.dump(model_final, file)
     print(f"Model saved to {model_path}")
-
-    lim_max = max(max(y_predict), max(y_true), max(Y_train), max(y_train_predict)) * 1.02
-    lim_min = min(min(y_predict), min(y_true), min(Y_train), min(y_train_predict)) * 0.98
-
-    plt.figure(figsize=(7, 5))  # 别设dpi
-    plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
-    plt.rcParams['axes.unicode_minus'] = False  # 显示负号
-    plt.grid(linestyle="--")  # 设置背景网格线为虚线
-    ax = plt.gca()  # 获取坐标轴对象
-    plt.scatter(y_true, y_predict, color='red', alpha=0.4, label='test')
-    plt.scatter(Y_train, y_train_predict, color='blue', alpha=0.4, label='train')
-    plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
-    plt.xticks(fontsize=12, fontweight='bold')
-    plt.yticks(fontsize=12, fontweight='bold')
-    plt.xlabel("Measured(hardness)", fontsize=12, fontweight='bold')
-    plt.ylabel("Predicted(hardness)", fontsize=12, fontweight='bold')
-    plt.xlim(lim_min, lim_max)
-    plt.ylim(lim_min, lim_max)
-    r2 = evaluation_matrix["R2"]
-    mae = evaluation_matrix["MAE"]
-    R = evaluation_matrix["R"]
-    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
-    plt.legend()
-    plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
-    plt.show()
+    # plot regression
+    # cv
+    plot_regression_results(Y_train,y_cv_predict,evaluation_matrix=evaluation_matrix_cv)
+    # test set
+    save_path = f'./figures/HEA_hardness_reg.png'
+    plot_regression_results(Y_test, y_predict, Y_train, y_train_predict, evaluation_matrix=evaluation_matrix,save_path=save_path)
