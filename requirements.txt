@@ -9,3 +9,4 @@ hyperopt~=0.2.7
 plotly~=5.22.0
 shap~=0.46.0
 lightgbm~=4.1.0
+matminer
