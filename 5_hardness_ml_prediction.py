@@ -61,9 +61,9 @@ if __name__ == '__main__':
     # print(elements_columns)
     dataset.head()
     chemical_formula_list = dataset['formula']
-    # df_chemistry_formula = pd.DataFrame({"formula": chemical_formula_list, "target": dataset[Y_col]})
-    # print(df_chemistry_formula.head())
-    # df_chemistry_formula.to_csv("./data/formula_hardness.csv", index=False)
+    df_chemistry_formula = pd.DataFrame({"formula": chemical_formula_list, "target": dataset[Y_col]})
+    print(df_chemistry_formula.head())
+    df_chemistry_formula.to_csv("./data/formula_hardness.csv", index=False)
     # if 特征已经计算过，不需重复计算
     feature_file_path = os.path.join(data_path, "magpie_feature_hardness.csv")
     if os.path.exists("./data/magpie_feature_hardness.csv"):
@@ -76,7 +76,6 @@ if __name__ == '__main__':
     dataset_all = pd.concat([dataset, df_magpie], axis=1)
     # features = elements_columns + conditions_features + magpie_features
 
-    # 这边少加了个熔点特征
     valence_features = ['avg s valence electrons', 'avg p valence electrons', 'avg d valence electrons',
                         'avg f valence electrons']
     alloy_feature = ['Melting temperature']
@@ -102,14 +101,18 @@ if __name__ == '__main__':
     model_final = RBF_SVR(C=1642, epsilon=13.6, gamma=0.44)
     model_final.fit(X_train, Y_train)
     y_predict = model_final.predict(X_test)
-    y_predict = y_predict
     y_train_predict = model_final.predict(X_train)
     y_true = Y_test
     evaluation_matrix = cal_reg_metric(y_true, y_predict)
-    cvscore = cross_val_score(model_final, X, Y, cv=10)
-    y_cv_predict = cross_val_predict(model_final, X, Y, cv=10)
-    R, _ = pearsonr(Y, y_cv_predict)
-    print(np.mean(cvscore), R.round(3))
+    cvscore = cross_val_score(model_final, X_train, Y_train, cv=10)
+    y_cv_predict = cross_val_predict(model_final, X_train, Y_train, cv=10)
+    R, _ = pearsonr(Y_train, y_cv_predict)
+    print(cvscore, np.mean(cvscore), R.round(3))
+
+    model_path = "./model/hardness_model.pkl"
+    with open(model_path, 'wb') as file:
+        pickle.dump(model_final, file)
+    print(f"Model saved to {model_path}")
 
     lim_max = max(max(y_predict), max(y_true), max(Y_train), max(y_train_predict)) * 1.02
     lim_min = min(min(y_predict), min(y_true), min(Y_train), min(y_train_predict)) * 0.98
@@ -133,13 +136,5 @@ if __name__ == '__main__':
     R = evaluation_matrix["R"]
     plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
     plt.legend()
-    # plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
+    plt.savefig(f'./figures/HEA_hardness_reg.png', bbox_inches='tight')
     plt.show()
-
-    # 预测硬度 (已计算好matminer特征, 计算过程在2_feature_calculation）
-    dataset_predict = pd.read_csv(os.path.join(data_path, "2_oxidation_magpie_feature.csv"))
-    oxidation_alloy_features = pd.read_csv("./data/2_oxidation_alloy_feature.csv")
-    dataset_predict = pd.concat([dataset_predict, oxidation_alloy_features['Melting temperature']], axis=1)
-    y_predict = model_final.predict(dataset_predict[features])
-    dataset_predict["hardness_predict"] = y_predict
-    dataset_predict.to_csv("./data/2_oxidation_hardness_predict.csv", index=False)

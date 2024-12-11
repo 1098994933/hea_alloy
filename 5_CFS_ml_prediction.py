@@ -52,7 +52,6 @@ def RBF_SVR(C=1.0, gamma=1.0, epsilon=1.0):
 
 if __name__ == '__main__':
     dataset = pd.read_csv('./data/2_CFS_magpie_feature.csv')
-    # dataset = pd.read_excel(r"D:\上海大学学习\毕设相关零碎材料收纳\Feature_CFS_bishe.xlsx", sheet_name=0)
     dataset.drop_duplicates(keep='first', inplace=True)
     print(dataset.shape)
     Q1 = dataset['CFS'].quantile(0.25)
@@ -92,7 +91,6 @@ if __name__ == '__main__':
     Y = ml_dataset[Y_col]
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=250)
     model_final = RBF_SVR(C=100, gamma=0.13, epsilon=1.3)
-    # model_final = RandomForestRegressor()
     model_final.fit(X_train, Y_train)
     y_test_predict = model_final.predict(X_test)
     y_train_predict = model_final.predict(X_train)
@@ -105,22 +103,13 @@ if __name__ == '__main__':
     print(cvscore, R2)
     print(evaluation_matrix_train)
 
+    model_path = "./model/CFS_model.pkl"
+    with open(model_path, 'wb') as file:
+        pickle.dump(model_final, file)
+    print(f"Model saved to {model_path}")
+
     lim_max = max(max(y_test_predict), max(Y_test), max(Y_train), max(y_train_predict)) * 1.02
     lim_min = min(min(y_test_predict), min(Y_test), min(Y_train), min(y_train_predict)) * 0.98
-
-    # plt.figure(figsize=(7, 5))
-    # plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
-    # plt.rcParams['axes.unicode_minus'] = False  # 显示负号
-    # plt.grid(linestyle="--")  # 设置背景网格线为虚线
-    # ax = plt.gca()  # 获取坐标轴对象
-    # plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
-    # plt.scatter(Y, y_cv_predict, color='red', alpha=0.4)
-    # plt.xticks(fontsize=12, fontweight='bold')
-    # plt.yticks(fontsize=12, fontweight='bold')
-    # plt.xlabel("Measured", fontsize=12, fontweight='bold')
-    # plt.ylabel("Predicted", fontsize=12, fontweight='bold')
-    # plt.show()
-    # plt.clf()
 
     plt.figure(figsize=(7, 5))
     plt.rcParams['font.sans-serif'] = ['Arial']  # 设置字体
@@ -132,18 +121,17 @@ if __name__ == '__main__':
     plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
     plt.xticks(fontsize=12, fontweight='bold')
     plt.yticks(fontsize=12, fontweight='bold')
-    plt.xlabel("Measured(hardness)", fontsize=12, fontweight='bold')
-    plt.ylabel("Predicted(hardness)", fontsize=12, fontweight='bold')
+    plt.xlabel("Measured(CFS)", fontsize=12, fontweight='bold')
+    plt.ylabel("Predicted(CFS)", fontsize=12, fontweight='bold')
     plt.xlim(lim_min, lim_max)
     plt.ylim(lim_min, lim_max)
     r2 = evaluation_matrix["R2"]
     mae = evaluation_matrix["MAE"]
     R = evaluation_matrix["R"]
+    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
+    plt.savefig(f'./figures/HEA_CFS_reg.png', bbox_inches='tight')
     # 为每个点标上序号
-    # print(Y)
     for i, (x, y) in enumerate(zip(Y, y_predict)):
         plt.text(x, y, f'{i}', fontsize=8, ha='right', va='bottom', color='black')
-    plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
     plt.legend()
-    # plt.savefig(f'./figures/HEA_CFS_reg.png', bbox_inches='tight')
     plt.show()

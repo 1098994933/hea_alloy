@@ -31,6 +31,13 @@ import lightgbm as lgb
 from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
 from sklearn.metrics import r2_score, mean_squared_error
 
+def lgbm_model(boosting_type='gbdt', objective='regression', learning_rate=0.15):
+    return Pipeline([
+        ("std_scaler", StandardScaler()),
+        ("model", lgb.LGBMRegressor(boosting_type=boosting_type, objective=objective, learning_rate=learning_rate))
+    ])
+
+
 if __name__ == '__main__':
     dataset = pd.read_csv("./data/2_YS_magpie_feature.csv")
     print(dataset.shape)
@@ -49,6 +56,7 @@ if __name__ == '__main__':
                      'MagpieData mean NdValence', 'MagpieData minimum GSvolume_pa', 'Radii local mismatch']
     alloy_feature = pd.read_csv('./data/2_YS_alloy_feature.csv')
     alloy_feature = alloy_feature.drop(['formula', 'YS'], axis=1)
+    print(alloy_feature.columns)
 
     # magpie features
     # ml_dataset = dataset[best_features_zyj + [Y_col]].dropna()
@@ -60,11 +68,7 @@ if __name__ == '__main__':
 
     Y = ml_dataset[Y_col]
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=98)
-    # model_final = lgb.LGBMRegressor(boosting_type='gbdt', objective='regression',
-    #                               max_depth=6, num_leaves=7, learning_rate=0.099,
-    #                               n_estimators=420, feature_fraction=0.5, min_data_in_leaf=20,
-    #                               metric='rmse', random_state=100)
-    model_final = lgb.LGBMRegressor(boosting_type='gbdt', objective='regression', learning_rate=0.15)
+    model_final = lgbm_model(boosting_type='gbdt', objective='regression', learning_rate=0.15)
     model_final.fit(X_train, Y_train)
     y_test_predict = model_final.predict(X_test)
     y_train_predict = model_final.predict(X_train)
@@ -77,6 +81,11 @@ if __name__ == '__main__':
     RMSE = np.sqrt(mean_squared_error(Y_test, y_test_predict))
     print(RMSE, R2)
     print(evaluation_matrix_train)
+
+    model_path = "./model/YS_model.pkl"
+    with open(model_path, 'wb') as file:
+        pickle.dump(model_final, file)
+    print(f"Model saved to {model_path}")
 
     lim_max = max(max(y_test_predict), max(Y_test), max(Y_train), max(y_train_predict)) * 1.02
     lim_min = min(min(y_test_predict), min(Y_test), min(Y_train), min(y_train_predict)) * 0.98
@@ -91,8 +100,8 @@ if __name__ == '__main__':
     plt.plot([lim_min, lim_max], [lim_min, lim_max], color='blue')
     plt.xticks(fontsize=12, fontweight='bold')
     plt.yticks(fontsize=12, fontweight='bold')
-    plt.xlabel("Measured(hardness)", fontsize=12, fontweight='bold')
-    plt.ylabel("Predicted(hardness)", fontsize=12, fontweight='bold')
+    plt.xlabel("Measured(YS)", fontsize=12, fontweight='bold')
+    plt.ylabel("Predicted(YS)", fontsize=12, fontweight='bold')
     plt.xlim(lim_min, lim_max)
     plt.ylim(lim_min, lim_max)
     r2 = evaluation_matrix["R2"]
@@ -100,5 +109,5 @@ if __name__ == '__main__':
     R = evaluation_matrix["R"]
     plt.text(0.05, 0.75, f"$R^2={r2:.3f}$\n$MAE={mae:.3f}$\n$R={R:.3f}$", transform=ax.transAxes)
     plt.legend()
-    # plt.savefig(f'./figures/HEA_YS_reg.png', bbox_inches='tight')
+    plt.savefig(f'./figures/HEA_YS_reg.png', bbox_inches='tight')
     plt.show()
