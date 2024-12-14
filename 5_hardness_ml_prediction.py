@@ -121,3 +121,6 @@ if __name__ == '__main__':
     # test set
     save_path = f'./figures/HEA_hardness_reg.png'
     plot_regression_results(Y_test, y_predict, Y_train, y_train_predict, evaluation_matrix=evaluation_matrix,save_path=save_path)
+
+    from util.plot import generate_shap_figures
+    generate_shap_figures(model_final, X, fig_path='./figures/shap_hardness.png', n_features=3)

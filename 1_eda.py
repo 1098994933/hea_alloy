@@ -13,8 +13,6 @@ df.to_csv("./data/1_oxidation_ml_dataset.csv", index=False)
 """ 15种元素 + 测试温度 + 暴露时间 = 氧化增重（随着时间）
 氧化增重是看最后的收敛的重量吗？
 """
-def oxidation_analysis(df):
-    pass
 
 df = pd.read_excel('./data/Phase data.xlsx')
 print(df.shape)

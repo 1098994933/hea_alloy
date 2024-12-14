@@ -6,6 +6,7 @@ from util.alloys_features import formula_to_features, find_elements
 from util.descriptor.magpie import get_magpie_features
 
 if __name__ == '__main__':
+    # TODO @zyj rename the number of in the file, it should be running after 4_generate_virtual_samples.py. It is a data structure of tree.
     # dataset = pd.read_csv(os.path.join("./data/", "HEA_virtual_samples_simple.csv"))
     # element_feature = dataset.columns[1:]
     # # print(element_feature)
